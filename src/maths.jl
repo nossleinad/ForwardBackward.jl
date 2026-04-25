@@ -18,12 +18,12 @@ function pointwise_gaussians_product(g1_mu::T, g1_var::T, g2_mu::T, g2_var::T) w
     end
     r_var = 1 / (1 / g1_var + 1 / g2_var)
     r_mu = r_var * (g1_mu / g1_var + g2_mu / g2_var)
-    r_log_norm_const =
-        T(-0.5 * (
-            log(2 * pi * (g1_var * g2_var / r_var)) +
-            (g1_mu^2 / g1_var) +
-            (g2_mu^2 / g2_var) - (r_mu^2 / r_var)
-        ))
+    # This is algebraically equivalent to the expression above, but avoids the
+    # large square-and-subtract cancellation that can turn broad OU messages
+    # into NaNs during tree search.
+    sum_var = g1_var + g2_var
+    z = (g1_mu - g2_mu) / sqrt(sum_var)
+    r_log_norm_const = T(-0.5 * (log(2 * pi * sum_var) + z^2))
     return r_mu, r_var, r_log_norm_const
 end
 
